@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RustCut</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="top" class="glass">
+  <div class="logo">✂ RustCut</div>
+  <button class="btn" id="nBtn">جديد</button><button class="btn" id="oBtn">فتح</button><button class="btn" id="sBtn">حفظ</button>
+  <span class="sep"></span>
+  <label>النسبة</label>
+  <select id="ratio" class="field"><option value="16:9">16:9</option><option value="9:16">9:16</option><option value="1:1">1:1</option><option value="4:5">4:5</option><option value="4:3">4:3</option><option value="21:9">21:9</option></select>
+  <label>جودة المعاينة</label>
+  <select id="pq" class="field"><option value="orig">أصلية</option><option value="720">720p</option><option value="480">480p</option><option value="360">360p</option></select>
+  <span style="margin-inline-start:auto"></span>
+  <button class="btn" id="setBtn">⚙ الإعدادات</button>
+  <button class="btn" id="helpBtn">⌨ المختصرات</button>
+  <button class="btn primary" id="expBtn">⬇ تصدير</button>
+</div>
+
+<div id="main">
+  <!-- المكتبة -->
+  <div id="lib" class="glass">
+    <div id="tabs">
+      <button data-t="media" class="on">الوسائط</button><button data-t="text">النص</button><button data-t="stk">ملصقات</button>
+      <button data-t="fx">تأثيرات</button><button data-t="tr">انتقالات</button>
+    </div>
+    <div class="pane on" id="p-media">
+      <div class="row h"><button class="btn primary" id="imp" style="flex:1">＋ فيديو / صور</button><button class="btn" id="impA" style="flex:1">🎵 صوت</button></div>
+      <div id="pool"></div>
+      <div class="hintp">＋ يضيف للمسار الأساسي، ▲ يضيف كطبقة علوية (PIP). يمكنك أيضاً سحب الملفات وإفلاتها في النافذة.</div>
+    </div>
+    <div class="pane" id="p-text">
+      <h4>قوالب النص</h4><div id="tpl" class="row h" style="flex-wrap:wrap"></div>
+      <h4>ترجمة تلقائية (Auto Captions)</h4>
+      <div class="row"><select id="capLang" class="field"><option value="ar">العربية</option><option value="en">English</option><option value="auto">تلقائي</option><option value="fa">فارسی</option><option value="ku">Kurdî</option><option value="tr">Türkçe</option></select>
+        <button class="btn primary" id="capBtn">✨ ترجمة تلقائية للمقطع المحدد</button></div>
+      <div class="hintp">تعمل دون إنترنت عبر whisper.cpp، وتُنشئ سطور نص مرتبطة بالتوقيت على مسار النص.</div>
+    </div>
+    <div class="pane" id="p-stk"><div id="stk"></div></div>
+    <div class="pane" id="p-fx"><div class="hintp">اختر مقطع فيديو ثم اضغط التأثير. ★ = يظهر في التصدير النهائي فقط.</div><div class="grid" id="fxgrid"></div></div>
+    <div class="pane" id="p-tr">
+      <div class="hintp">يُطبَّق بين المقطع المحدد والذي بعده على المسار الأساسي، ويظهر في التصدير.</div>
+      <div class="grid" id="trgrid"></div>
+      <div class="row"><label>مدة الانتقال <span class="val" id="tdv"></span></label><input type="range" min="0.2" max="2" step="0.1" data-p="transDur" data-num="1" data-k="video,image" data-main="1"></div>
+    </div>
+  </div>
+
+  <!-- المعاينة -->
+  <div id="stagewrap" class="glass">
+    <div id="empty"><b>ابدأ باستيراد فيديو</b><br>مرّر المؤشر على التايملاين لمعاينة فورية</div>
+    <div id="stage">
+      <div id="frame" dir="ltr">
+        <div id="layers"></div>
+        <div id="xbox"><i id="xs" title="تغيير الحجم"></i><i id="xr" title="تدوير"></i></div>
+      </div>
+    </div>
+    <div id="audiobox"></div>
+  </div>
+
+  <!-- الخصائص -->
+  <div id="side" class="glass">
+    <b id="selname">اختر مقطعاً لعرض خصائصه</b>
+    <div id="itabs"><button class="itab on" data-t="img">صورة</button><button class="itab" data-t="aud">صوت</button><button class="itab" data-t="spd">السرعة</button><button class="itab" data-t="mot">حركة</button></div>
+
+    <div class="ipane on" id="i-img">
+      <div data-k="text"><h3>النص</h3>
+        <textarea class="field" rows="3" data-p="text" style="user-select:text"></textarea>
+        <div class="row h"><select class="field" data-p="style"><option value="plain">عادي</option><option value="outline">حدود</option><option value="neon">نيون</option><option value="box">صندوق</option></select><input type="color" data-p="textColor"></div>
+      </div>
+      <div data-k="text,sticker"><div class="row"><label>الحجم</label><input type="range" min="2" max="40" step="0.5" data-p="textSize" data-num="1"></div></div>
+      <div data-k="image,text,sticker"><div class="row"><label>المدة (ثانية)</label><input type="number" class="field" min="0.1" step="0.1" data-p="dur" data-num="1"></div></div>
+
+      <div data-k="video,image,text,sticker" data-ov="1"><h3>التحويل (إطارات مفتاحية ◆)</h3><div id="kfrows"></div>
+        <div class="hintp">اسحب العنصر على المعاينة للتحريك، النقطة السفلية للحجم، العلوية للتدوير. بعد إضافة ◆ أي تعديل يُسجَّل كإطار جديد.</div></div>
+
+      <div data-k="video"><h3>ضبط الصورة</h3>
+        <div class="row"><label>السطوع</label><input type="range" min="-100" max="100" data-p="fx.brightness" data-num="1"></div>
+        <div class="row"><label>التباين</label><input type="range" min="-100" max="100" data-p="fx.contrast" data-num="1"></div>
+        <div class="row"><label>التشبع</label><input type="range" min="-100" max="100" data-p="fx.saturation" data-num="1"></div>
+        <div class="row"><label>تمويه (Blur) لكامل المقطع</label><input type="range" min="0" max="50" data-p="fx.blur" data-num="1"></div>
+        <label class="row h"><input type="checkbox" data-p="fx.flip"> مرآة</label>
+        <h3>قناع (Mask) — تمويه جزء محدد</h3>
+        <label class="row h"><input type="checkbox" data-p="mask.on"> تفعيل</label>
+        <div class="row"><select class="field" data-p="mask.shape"><option value="rect">مستطيل</option><option value="ellipse">بيضاوي</option></select></div>
+        <div class="row"><label>شدة التمويه</label><input type="range" min="1" max="80" data-p="mask.blur" data-num="1"></div>
+        <div class="hintp">اسحب المربع المنقط على المعاينة لتحريكه والنقطة البيضاء لتغيير حجمه.</div>
+      </div>
+      <div data-k="video" data-ov="1"><h3>الكروما (إزالة الخلفية الخضراء)</h3>
+        <label class="row h"><input type="checkbox" data-p="chroma.on"> تفعيل</label>
+        <div class="row h"><label>اللون</label><input type="color" data-p="chroma.color"></div>
+        <div class="row"><label>التشابه</label><input type="range" min="0.01" max="0.6" step="0.01" data-p="chroma.sim" data-num="1"></div>
+        <div class="row"><label>النعومة</label><input type="range" min="0" max="0.4" step="0.01" data-p="chroma.blend" data-num="1"></div>
+      </div>
+      <div data-k="video" data-main="1"><h3>انتقال بعد هذا المقطع</h3>
+        <div class="row"><select class="field" id="transSel" data-p="transSel"></select></div></div>
+    </div>
+
+    <div class="ipane" id="i-aud">
+      <div data-k="video,audio"><h3>الصوت</h3>
+        <div class="row"><label>مستوى الصوت (الحد الأعلى في المعاينة 100%)</label><input type="range" min="0" max="2" step="0.05" data-p="vol" data-num="1"></div>
+        <div class="row"><label>تلاشي دخول (ث)</label><input type="range" min="0" max="5" step="0.1" data-p="aFadeIn" data-num="1"></div>
+        <div class="row"><label>تلاشي خروج (ث)</label><input type="range" min="0" max="5" step="0.1" data-p="aFadeOut" data-num="1"></div>
+        <label class="row h"><input type="checkbox" data-p="denoise"> تنقية الصوت (إزالة الضجيج والهمهمة) — في التصدير</label>
+        <div class="row"><label>درجة الصوت (نصف نغمة) — في التصدير</label><input type="range" min="-12" max="12" step="1" data-p="pitch" data-num="1"></div>
+      </div>
+    </div>
+
+    <div class="ipane" id="i-spd">
+      <div data-k="video,audio"><h3>السرعة</h3>
+        <div class="row h"><button class="btn" id="slow">−</button>
+          <select class="field" data-p="speed" data-num="1"><option value="0.1">0.1x</option><option value="0.25">0.25x</option><option value="0.5">0.5x</option><option value="0.75">0.75x</option><option value="1">1x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option><option value="2">2x</option><option value="3">3x</option><option value="4">4x</option><option value="8">8x</option></select>
+          <button class="btn" id="fast">+</button></div>
+        <div class="hintp">اختصارات: ] أو + للتسريع، [ أو - للتبطيء.</div></div>
+    </div>
+
+    <div class="ipane" id="i-mot">
+      <div data-k="video,image,text,sticker" data-ov="1"><h3>حركة الدخول والخروج</h3>
+        <div class="row"><label>دخول</label><select class="field" id="animIn" data-p="animIn"></select></div>
+        <div class="row"><label>خروج</label><select class="field" id="animOut" data-p="animOut"></select></div>
+        <div class="row"><label>المدة <span class="val" id="animDurV"></span></label><input type="range" min="0.1" max="2" step="0.1" data-p="animDur" data-num="1"></div>
+        <div class="hintp">تُطبَّق على القنوات التي ليس عليها إطارات مفتاحية.</div></div>
+    </div>
+
+    <div class="row h wrap"><button class="btn" id="split">✂ تقسيم</button><button class="btn" id="dup">⧉ نسخ</button><button class="btn" id="del">🗑 حذف</button></div>
+  </div>
+</div>
+
+<!-- التايملاين -->
+<div id="tl" class="glass">
+  <div id="tbar">
+    <button class="btn" id="undo" title="تراجع">↶</button><button class="btn" id="redo" title="إعادة">↷</button>
+    <button class="btn primary" id="play">▶ تشغيل</button>
+    <span id="time">00:00.0 / 00:00.0</span>
+    <button class="btn" id="addV">＋ مسار فيديو</button><button class="btn" id="addT">＋ مسار نص</button><button class="btn" id="addA">＋ مسار صوت</button>
+    <span style="margin-inline-start:auto" class="val">تكبير</span><input type="range" id="zoom" min="15" max="400" value="80" style="width:130px">
+  </div>
+  <div id="scroll"><div id="inner">
+    <div id="ruler"><div class="th"></div><div id="rl"></div></div>
+    <div id="rows"></div>
+    <div id="ph"></div><div id="hv"><div id="tip">0.0</div></div>
+  </div></div>
+</div>
+
+<div class="modal" id="exp"><div class="box glass">
+  <h2>تصدير الفيديو</h2>
+  <div class="two">
+    <div class="row"><label>الدقة</label><select id="xres" class="field"><option value="480">480p</option><option value="720">720p HD</option><option value="1080" selected>1080p Full HD</option><option value="1440">1440p 2K</option><option value="2160">2160p 4K</option></select><span class="val" id="xdim"></span></div>
+    <div class="row"><label>الإطارات / ثانية</label><select id="xfps" class="field"><option>24</option><option>25</option><option selected>30</option><option>50</option><option>60</option></select></div>
+    <div class="row"><label>الحاوية</label><select id="xcont" class="field"><option value="mp4">MP4</option><option value="mov">MOV</option></select></div>
+    <div class="row"><label>الترميز</label><select id="xcodec" class="field">
+      <option value="h264">H.264</option><option value="h265">H.265 (HEVC)</option><option value="prores">Apple ProRes 422 HQ</option>
+      <option value="h264_nvenc">H.264 — NVIDIA</option><option value="hevc_nvenc">H.265 — NVIDIA</option><option value="h264_qsv">H.264 — Intel QuickSync</option><option value="h264_amf">H.264 — AMD</option></select></div>
+    <div class="row"><label>التحكم بالجودة</label><select id="xmode" class="field"><option value="crf">جودة ثابتة (CRF)</option><option value="bitrate">معدل بت (Mbps)</option></select></div>
+    <div class="row" id="xcrfw"><label>الجودة</label><select id="xq" class="field"><option value="14">أعلى جودة</option><option value="18" selected>عالية</option><option value="23">متوسطة</option><option value="28">خفيفة</option></select></div>
+    <div class="row" id="xbrw" style="display:none"><label>معدل البت (Mbps)</label><input id="xbr" type="number" class="field" value="20" min="1" max="400"></div>
+    <div class="row"><label>سرعة الترميز</label><select id="xpreset" class="field"><option value="veryfast">سريع</option><option value="medium" selected>متوازن</option><option value="slow">أبطأ وأجود</option></select></div>
+  </div>
+  <div id="bar"><i></i></div><div class="val" id="xmsg"></div>
+  <div class="row h"><button class="btn primary" id="xgo" style="flex:1">اختيار مكان الحفظ وبدء التصدير</button><button class="btn" id="xclose">إغلاق</button></div>
+</div></div>
+
+<div class="modal" id="set"><div class="box glass">
+  <h2>الإعدادات</h2>
+  <div class="two">
+    <div class="row"><label>النسبة الافتراضية للمشاريع</label><select id="sRatio" class="field"><option>16:9</option><option>9:16</option><option>1:1</option><option>4:5</option></select></div>
+    <div class="row"><label>الإطارات الافتراضية</label><select id="sFps" class="field"><option>24</option><option>25</option><option>30</option><option>50</option><option>60</option></select></div>
+    <div class="row"><label>عرض الوقت</label><select id="sTc" class="field"><option value="sec">ثوانٍ</option><option value="tc">Timecode HH:MM:SS:FF</option></select></div>
+    <div class="row"><label>التسريع بالعتاد (التصدير)</label><select id="sHw" class="field"><option value="none">بدون (المعالج)</option><option value="nvenc">NVIDIA NVENC</option><option value="qsv">Intel QuickSync</option><option value="amf">AMD AMF</option></select></div>
+  </div>
+  <label class="row h"><input type="checkbox" id="sAuto"> حفظ تلقائي بعد كل تغيير</label>
+  <label class="row h"><input type="checkbox" id="sProxy"> إنشاء نسخ معاينة خفيفة تلقائياً للفيديوهات الأكبر من 1080p</label>
+  <div class="row h"><span>حجم الكاش: <b id="sCache">…</b></span><button class="btn" id="sClear">تفريغ الكاش</button></div>
+  <h3>تخصيص المختصرات</h3><div id="sKeys"></div>
+  <button class="btn" id="sclose">إغلاق</button>
+</div></div>
+
+<div class="modal" id="help"><div class="box glass">
+  <h2>مختصرات لوحة المفاتيح</h2>
+  <div class="sc">
+    <span><kbd>Space</kbd></span><span>تشغيل / إيقاف</span>
+    <span><kbd>S</kbd> أو <kbd>Ctrl+B</kbd></span><span>تقسيم عند المؤشر</span>
+    <span><kbd>+</kbd> / <kbd>]</kbd></span><span>تسريع المقطع</span>
+    <span><kbd>-</kbd> / <kbd>[</kbd></span><span>تبطيء المقطع</span>
+    <span><kbd>Delete</kbd> / <kbd>Shift+Delete</kbd></span><span>حذف / حذف مع إزاحة</span>
+    <span><kbd>Ctrl+D</kbd></span><span>نسخ المقطع</span>
+    <span><kbd>Ctrl+Z</kbd> <kbd>Ctrl+Y</kbd></span><span>تراجع / إعادة</span>
+    <span><kbd>Ctrl+S</kbd> <kbd>Ctrl+E</kbd></span><span>حفظ / تصدير</span>
+    <span><kbd>←</kbd> <kbd>→</kbd></span><span>إطار واحد</span>
+    <span><kbd>Ctrl + عجلة الماوس</kbd></span><span>تكبير التايملاين</span>
+  </div>
+  <div class="hintp">تعمل مع أي لغة كيبورد. يمكن تغيير بعضها من الإعدادات.</div>
+  <button class="btn" id="hclose">إغلاق</button>
+</div></div>
+<div id="toast"></div>
+
+<script src="js/util.js"></script>
+<script src="js/model.js"></script>
+<script src="js/preview.js"></script>
+<script src="js/timeline.js"></script>
+<script src="js/panels.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
